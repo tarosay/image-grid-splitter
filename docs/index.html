@@ -4,336 +4,629 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GridSplit Downloader</title>
+  <meta name="description" content="画像を n×n に分割し、左上から右下へ連番を付けて ZIP で一括ダウンロードできる無料ツールです。" />
+  <meta name="theme-color" content="#0f172a" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="GridSplit Downloader" />
+  <meta property="og:description" content="画像を n×n に分割して、ZIPでまとめてダウンロード。" />
+  <meta property="og:url" content="https://tarosay.github.io/image-grid-splitter/" />
+  <meta property="og:image" content="https://tarosay.github.io/image-grid-splitter/og-image.png" />
+  <meta property="og:site_name" content="GridSplit Downloader" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="GridSplit Downloader" />
+  <meta name="twitter:description" content="画像を n×n に分割して、ZIPでまとめてダウンロード。" />
+  <meta name="twitter:image" content="https://tarosay.github.io/image-grid-splitter/og-image.png" />
+
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="og-image.png" />
+
   <style>
     :root {
-      --bg: #f6f7fb;
-      --card: #ffffff;
-      --text: #1f2937;
-      --muted: #6b7280;
-      --line: #d1d5db;
-      --accent: #111827;
-      --accent2: #374151;
-      --hover: #eef2f7;
-      --ok: #065f46;
-      --err: #991b1b;
-      --shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-      --radius: 20px;
+      --bg1: #07111f;
+      --bg2: #0c1830;
+      --panel: rgba(255,255,255,0.09);
+      --panel-border: rgba(255,255,255,0.13);
+      --white: #ffffff;
+      --text: #e5eefc;
+      --muted: #9fb0cb;
+      --dark: #0f172a;
+      --dark-muted: #5b6b82;
+      --accent: #3b82f6;
+      --accent2: #06b6d4;
+      --accent3: #8b5cf6;
+      --shadow: 0 18px 48px rgba(2, 12, 27, 0.28);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 18px;
+      --maxw: 1200px;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
-    body {
+    html, body {
       margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-        sans-serif;
-      background: var(--bg);
+      min-height: 100%;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(59,130,246,0.20), transparent 28%),
+        radial-gradient(circle at top right, rgba(6,182,212,0.16), transparent 24%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
       color: var(--text);
     }
 
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      background: rgba(255,255,255,0.08);
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+
+    .container {
+      width: min(var(--maxw), calc(100% - 32px));
+      margin: 0 auto;
+    }
+
     header {
-      background: rgba(255, 255, 255, 0.92);
-      border-bottom: 1px solid #e5e7eb;
-      backdrop-filter: blur(8px);
       position: sticky;
       top: 0;
       z-index: 10;
+      backdrop-filter: blur(14px);
+      background: rgba(4, 12, 24, 0.54);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
     }
 
-    .wrap {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 20px;
+    .header-inner {
+      min-height: 74px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
     }
 
-    .title-row {
+    .brand {
       display: flex;
       align-items: center;
       gap: 14px;
+      text-decoration: none;
+      color: inherit;
     }
 
-    .logo {
-      width: 52px;
-      height: 52px;
-      border-radius: 16px;
-      background: var(--accent);
-      color: white;
+    .brand-badge {
+      width: 46px;
+      height: 46px;
       display: grid;
       place-items: center;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2) 55%, var(--accent3));
+      box-shadow: 0 14px 30px rgba(59,130,246,0.26);
+      color: white;
       font-size: 24px;
-      box-shadow: var(--shadow);
-      user-select: none;
+      font-weight: 900;
     }
 
-    h1 {
-      margin: 0;
-      font-size: 1.7rem;
+    .brand-title {
+      font-size: 1.04rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
     }
 
-    .subtitle {
-      margin: 4px 0 0;
+    .brand-sub {
+      margin-top: 2px;
+      font-size: 0.85rem;
       color: var(--muted);
-      font-size: 0.95rem;
+    }
+
+    .top-note {
+      font-size: 0.88rem;
+      color: var(--muted);
+      white-space: nowrap;
     }
 
     main {
-      padding: 24px 20px 40px;
+      padding: 24px 0 40px;
     }
 
-    .grid {
-      max-width: 1100px;
-      margin: 0 auto;
+    .layout {
       display: grid;
-      grid-template-columns: 1.3fr 0.9fr;
-      gap: 24px;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 28px;
+      align-items: stretch;
     }
 
-    .card {
-      background: var(--card);
-      border-radius: 28px;
+    .left-stack {
+      display: grid;
+      grid-template-rows: auto auto;
+      gap: 28px;
+    }
+
+    .glass-card,
+    .preview-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.11), rgba(255,255,255,0.07));
+      border: 1px solid var(--panel-border);
+      border-radius: 30px;
       box-shadow: var(--shadow);
-      padding: 22px;
     }
 
-    .card h2 {
-      margin: 0 0 6px;
-      font-size: 1.2rem;
+    .glass-card {
+      padding: 24px;
     }
 
-    .card p.desc {
-      margin: 0 0 18px;
-      color: var(--muted);
+    .preview-card {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+      height: 100%;
+    }
+
+    .white-card {
+      background: rgba(255,255,255,0.96);
+      color: var(--dark);
+      border-radius: 30px;
+      box-shadow: var(--shadow);
+      padding: 24px;
+    }
+
+    .card-title {
+      margin: 0;
+      font-size: 1.18rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .card-desc {
+      margin: 8px 0 0;
+      line-height: 1.7;
       font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    .white-card .card-desc {
+      color: var(--dark-muted);
+    }
+
+    .small-note {
+      margin-top: 10px;
+      line-height: 1.7;
+      font-size: 0.92rem;
+      color: #d7e7ff;
     }
 
     .drop-zone {
-      min-height: 360px;
-      border: 2px dashed var(--line);
-      border-radius: 24px;
-      background: #fafbfc;
+      margin-top: 20px;
+      min-height: 330px;
+      border-radius: 26px;
+      border: 2px dashed rgba(255,255,255,0.18);
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.04));
       display: flex;
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 24px;
+      padding: 22px;
       cursor: pointer;
-      transition: 0.2s ease;
+      transition: 0.18s ease;
       overflow: hidden;
     }
 
     .drop-zone:hover {
-      background: var(--hover);
-      border-color: #9ca3af;
+      transform: translateY(-1px);
+      border-color: rgba(255,255,255,0.28);
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.05));
     }
 
     .drop-zone.dragging {
-      background: #eef2f7;
-      border-color: var(--accent);
+      border-color: rgba(59,130,246,0.9);
+      background: linear-gradient(180deg, rgba(59,130,246,0.18), rgba(6,182,212,0.12));
+      transform: scale(1.01);
     }
 
-    .drop-inner {
-      width: 100%;
+    .drop-inner { width: 100%; }
+
+    .drop-icon-wrap {
+      width: 78px;
+      height: 78px;
+      margin: 0 auto 18px;
+      display: grid;
+      place-items: center;
+      border-radius: 24px;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.16);
+      font-size: 36px;
     }
 
-    .drop-icon {
-      font-size: 56px;
-      line-height: 1;
-      margin-bottom: 12px;
-      user-select: none;
+    .drop-title {
+      font-size: 1.18rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
     }
 
-    .preview {
-      max-width: 100%;
-      max-height: 320px;
-      border-radius: 18px;
-      border: 1px solid #e5e7eb;
-      background: white;
-      object-fit: contain;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-    }
-
-    .file-name {
-      margin-top: 12px;
+    .drop-sub {
+      margin-top: 10px;
       color: var(--muted);
-      word-break: break-all;
+      line-height: 1.7;
       font-size: 0.95rem;
     }
 
-    .side {
-      display: grid;
-      gap: 24px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 600;
-    }
-
-    input[type="number"] {
-      width: 100%;
-      height: 46px;
-      padding: 0 14px;
-      border: 1px solid #d1d5db;
-      border-radius: 16px;
-      font-size: 1rem;
-      background: white;
-      color: var(--text);
-    }
-
-    .info-box {
-      margin-top: 16px;
-      background: #f3f4f6;
-      border-radius: 16px;
-      padding: 14px 16px;
-      color: #374151;
-      font-size: 0.95rem;
-    }
-
-    .btns {
+    .drop-btn-look {
+      display: inline-flex;
       margin-top: 18px;
+      padding: 11px 16px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: white;
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .preview-image {
+      max-width: 100%;
+      max-height: 288px;
+      object-fit: contain;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.96);
+      border: 1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 12px 26px rgba(2,12,27,0.20);
+    }
+
+    .preview-name {
+      margin-top: 14px;
+      color: #dbeafe;
+      font-size: 0.94rem;
+      word-break: break-all;
+    }
+
+    .preview-board {
+      margin-top: 16px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 24px;
+      padding: 16px;
+      overflow: auto;
+      flex: 1;
+      height: 560px;
+      min-height: 560px;
+      max-height: 560px;
       display: grid;
+      place-items: center;
+    }
+
+    .preview-grid {
+      display: grid;
+      gap: 8px;
+      width: max-content;
+      height: max-content;
+      margin: 0 auto;
+    }
+
+    .preview-tile {
+      position: relative;
+      width: var(--tile-size, 96px);
+      height: var(--tile-size, 96px);
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.14);
+      background-color: rgba(255,255,255,0.06);
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-position: center;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+      flex: 0 0 auto;
+    }
+
+    .preview-tile::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(15,23,42,0.04), rgba(15,23,42,0.25));
+      pointer-events: none;
+    }
+
+    .preview-label {
+      position: absolute;
+      left: 7px;
+      bottom: 7px;
+      z-index: 1;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.78);
+      border: 1px solid rgba(255,255,255,0.14);
+      color: white;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+
+    .preview-placeholder {
+      display: grid;
+      place-items: center;
+      min-height: 260px;
+      color: var(--muted);
+      line-height: 1.8;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .field-label {
+      display: block;
+      margin: 18px 0 10px;
+      font-size: 0.96rem;
+      font-weight: 700;
+    }
+
+    .field-input {
+      width: 100%;
+      height: 50px;
+      border-radius: 18px;
+      border: 1px solid #d8e2ef;
+      padding: 0 16px;
+      font-size: 1rem;
+      outline: none;
+      color: var(--dark);
+      background: white;
+    }
+
+    .field-input:focus {
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 4px rgba(96,165,250,0.14);
+    }
+
+    .metric-row {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px;
     }
 
+    .metric-box {
+      border-radius: 20px;
+      background: linear-gradient(180deg, #f8fbff, #eef5ff);
+      border: 1px solid #dce8f8;
+      padding: 15px 16px;
+    }
+
+    .metric-box span {
+      display: block;
+      color: var(--dark-muted);
+      font-size: 0.88rem;
+    }
+
+    .metric-box strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 1.36rem;
+      letter-spacing: -0.03em;
+    }
+
+    .button-col {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
     button {
-      height: 46px;
+      appearance: none;
       border: 0;
-      border-radius: 16px;
+      border-radius: 18px;
+      min-height: 52px;
       padding: 0 18px;
       font-size: 0.98rem;
-      font-weight: 700;
+      font-weight: 800;
       cursor: pointer;
-      transition: 0.15s ease;
+      transition: 0.14s ease;
     }
 
-    button.primary {
-      background: var(--accent);
+    button:hover:not(:disabled) { transform: translateY(-1px); }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .primary-btn {
       color: white;
+      background: linear-gradient(135deg, var(--accent), var(--accent2) 58%, var(--accent3));
+      box-shadow: 0 16px 36px rgba(37,99,235,0.22);
     }
 
-    button.primary:hover:not(:disabled) {
-      background: var(--accent2);
-    }
-
-    button.secondary {
+    .secondary-btn {
+      color: var(--dark);
       background: white;
-      color: var(--text);
-      border: 1px solid #d1d5db;
+      border: 1px solid #d8e2ef;
     }
 
-    button.secondary:hover:not(:disabled) {
-      background: #f9fafb;
-    }
-
-    button:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
-
-    ul.rules {
-      margin: 0;
-      padding-left: 1.2rem;
-      color: #374151;
-      line-height: 1.8;
-    }
-
-    .status {
-      font-size: 0.96rem;
-      line-height: 1.6;
-      color: #374151;
+    .status-box {
+      margin-top: 16px;
+      border-radius: 20px;
+      padding: 15px 16px;
+      line-height: 1.75;
+      border: 1px solid #dbeafe;
+      background: linear-gradient(180deg, #f8fbff, #f2f7ff);
+      color: #334155;
       word-break: break-word;
     }
 
-    .status.ok {
-      color: var(--ok);
+    .status-box.ok {
+      border-color: rgba(34,197,94,0.28);
+      background: linear-gradient(180deg, rgba(34,197,94,0.08), rgba(34,197,94,0.04));
+      color: #166534;
     }
 
-    .status.err {
-      color: var(--err);
+    .status-box.err {
+      border-color: rgba(239,68,68,0.28);
+      background: linear-gradient(180deg, rgba(239,68,68,0.08), rgba(239,68,68,0.04));
+      color: #991b1b;
     }
 
-    .small {
+    .rules {
+      margin: 0;
+      padding-left: 1.15rem;
+      line-height: 1.9;
+      color: #334155;
+    }
+
+    .footer {
+      margin-top: 24px;
+    }
+
+    .footer-card {
+      border-radius: 24px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.10);
+      padding: 20px 22px;
       color: var(--muted);
-      font-size: 0.9rem;
+      line-height: 1.8;
     }
 
-    @media (max-width: 900px) {
-      .grid {
+    .hidden { display: none !important; }
+
+    @media (max-width: 980px) {
+      .layout {
         grid-template-columns: 1fr;
+      }
+
+      .top-note {
+        display: none;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .container {
+        width: min(var(--maxw), calc(100% - 20px));
+      }
+
+      .header-inner {
+        min-height: 68px;
+      }
+
+      .brand-sub {
+        display: none;
+      }
+
+      .glass-card,
+      .preview-card,
+      .white-card {
+        border-radius: 24px;
+        padding: 20px;
       }
 
       .drop-zone {
         min-height: 280px;
+      }
+
+      .metric-row {
+        grid-template-columns: 1fr;
+      }
+
+      .preview-board {
+        height: 420px;
+        min-height: 420px;
+        max-height: 420px;
+      }
+
+      .preview-tile {
+        width: var(--tile-size, 82px);
+        height: var(--tile-size, 82px);
       }
     }
   </style>
 </head>
 <body>
   <header>
-    <div class="wrap">
-      <div class="title-row">
-        <div class="logo">▦</div>
+    <div class="container header-inner">
+      <a class="brand" href="#">
+        <div class="brand-badge">▦</div>
         <div>
-          <h1>GridSplit Downloader</h1>
-          <p class="subtitle">
-            画像を n×n に分割して、左上から右下へ連番で ZIP ダウンロード
-          </p>
+          <div class="brand-title">GridSplit Downloader</div>
+          <div class="brand-sub">n×n image splitter for instant ZIP download</div>
         </div>
-      </div>
+      </a>
+      <div class="top-note">Browser only ・ No upload to server ・ Free</div>
     </div>
   </header>
 
   <main>
-    <div class="grid">
-      <section class="card">
-        <h2>画像を読み込む</h2>
-        <p class="desc">ファイル選択またはドラッグ&ドロップに対応しています。</p>
+    <div class="container">
+      <div class="layout">
+        <div class="left-stack">
+          <section class="glass-card">
+            <h2 class="card-title">1. まず画像を読み込む</h2>
+            <p class="card-desc">クリックして選択、または画像ファイルをドラッグ&ドロップしてください。</p>
+            <div class="small-note">サーバへ画像は送信されません。処理はこのブラウザ内だけで完結します。</div>
 
-        <div id="dropZone" class="drop-zone">
-          <div class="drop-inner" id="dropContent">
-            <div class="drop-icon">🖼️</div>
-            <div style="font-size: 1.08rem; font-weight: 700;">ここへ画像をドラッグ</div>
-            <div class="small" style="margin-top: 8px;">またはクリックして画像を選択</div>
-          </div>
+            <div id="dropZone" class="drop-zone" tabindex="0" role="button" aria-label="画像を選択">
+              <div class="drop-inner" id="dropContent">
+                <div class="drop-icon-wrap">🖼️</div>
+                <div class="drop-title">ここへ画像をドラッグ</div>
+                <div class="drop-sub">またはクリックして画像を選択します。PNG / JPG / WebP など一般的な画像形式に対応しています。</div>
+                <div class="drop-btn-look">画像を選択</div>
+              </div>
+            </div>
+            <input id="fileInput" class="hidden" type="file" accept="image/*" />
+          </section>
+
+          <section class="white-card">
+            <h2 class="card-title">3. 分割数を決めてダウンロード</h2>
+            <p class="card-desc">分割数 n を指定すると、画像を n×n に分割します。入力欄の上でマウスホイールでも増減できます。</p>
+
+            <label class="field-label" for="splitN">分割数 n</label>
+            <input id="splitN" class="field-input" type="number" min="1" step="1" value="2" inputmode="numeric" />
+
+            <div class="metric-row">
+              <div class="metric-box">
+                <span>出力枚数</span>
+                <strong id="pieceCount">4</strong>
+              </div>
+              <div class="metric-box">
+                <span>ファイル名</span>
+                <strong id="namePreview">sample_001</strong>
+              </div>
+            </div>
+
+            <div class="button-col">
+              <button id="downloadBtn" class="primary-btn" disabled>ZIPでダウンロード</button>
+              <button id="clearBtn" class="secondary-btn" disabled>クリア</button>
+            </div>
+
+            <div id="status" class="status-box">画像を選ぶか、ここへドラッグしてください。</div>
+          </section>
         </div>
 
-        <input id="fileInput" type="file" accept="image/*" hidden />
-      </section>
+        <aside class="preview-card">
+          <h2 class="card-title">2. 出力イメージを確認</h2>
+          <p class="card-desc">アップロードした画像と分割数に応じて、プレビューがその場で更新されます。</p>
 
-      <div class="side">
-        <section class="card">
-          <h2>設定</h2>
-          <p class="desc">n を指定すると n×n 分割します。</p>
-
-          <label for="splitN">分割数 n</label>
-          <input id="splitN" type="number" min="1" step="1" value="2" />
-
-          <div class="info-box">
-            出力枚数: <strong id="pieceCount">4</strong>
+          <div class="preview-board">
+            <div id="previewGrid" class="preview-grid"></div>
+            <div id="previewPlaceholder" class="preview-placeholder">
+              画像を読み込むと、ここに分割プレビューが表示されます。<br>
+              左上から右下へ、行優先で連番を付けます。
+            </div>
           </div>
 
-          <div class="btns">
-            <button id="downloadBtn" class="primary" disabled>ZIPでダウンロード</button>
-            <button id="clearBtn" class="secondary" disabled>クリア</button>
+          <div id="previewCaption" class="small-note" style="margin-top:14px;">
+            現在はプレビュー待機中です。
           </div>
-        </section>
+        </aside>
+      </div>
 
-        <section class="card">
-          <h2>出力ルール</h2>
+      <div style="margin-top:24px;">
+        <section class="white-card">
+          <h2 class="card-title">出力ルール</h2>
           <ul class="rules">
-            <li>元ファイル名を使って <code>sample_001.png</code> の形式で保存します。</li>
-            <li>連番は左上から右下へ、行優先で振ります。</li>
-            <li>分割結果は 1つの ZIP にまとめてダウンロードします。</li>
+            <li>画像は <strong>n×n</strong> に分割されます。</li>
+            <li>連番は <strong>左上 → 右下</strong>、行優先で振られます。</li>
+            <li>元のファイル名を使って <code>sample_001.png</code> の形式で保存します。</li>
+            <li>最後の行・列は、端数がある場合も画像の右端・下端まで含めて切り出します。</li>
           </ul>
         </section>
-
-        <section class="card">
-          <h2>状態</h2>
-          <div id="status" class="status">画像を選ぶか、ここへドラッグしてください。</div>
-        </section>
       </div>
+
+      <footer class="footer">
+        <div class="footer-card">
+          <strong style="color:white;">GridSplit Downloader</strong> ・ MIT License ・ Published on GitHub Pages<br>
+          URL: <a href="https://tarosay.github.io/image-grid-splitter/" target="_blank" rel="noopener noreferrer">https://tarosay.github.io/image-grid-splitter/</a>
+        </div>
+      </footer>
     </div>
   </main>
 
@@ -344,23 +637,31 @@
     const fileInput = document.getElementById("fileInput");
     const splitNInput = document.getElementById("splitN");
     const pieceCount = document.getElementById("pieceCount");
-    const statusEl = document.getElementById("status");
+    const namePreview = document.getElementById("namePreview");
     const downloadBtn = document.getElementById("downloadBtn");
     const clearBtn = document.getElementById("clearBtn");
+    const statusEl = document.getElementById("status");
+    const previewGrid = document.getElementById("previewGrid");
+    const previewPlaceholder = document.getElementById("previewPlaceholder");
+    const previewCaption = document.getElementById("previewCaption");
 
     let currentFile = null;
     let currentPreviewUrl = null;
 
-    function setStatus(message, type = "") {
-      statusEl.textContent = message;
-      statusEl.className = "status";
-      if (type === "ok") statusEl.classList.add("ok");
-      if (type === "err") statusEl.classList.add("err");
+    function escapeHtml(str) {
+      return str
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
     }
 
-    function updatePieceCount() {
-      const n = Math.max(1, parseInt(splitNInput.value || "1", 10));
-      pieceCount.textContent = String(n * n);
+    function setStatus(message, type = "") {
+      statusEl.textContent = message;
+      statusEl.className = "status-box";
+      if (type === "ok") statusEl.classList.add("ok");
+      if (type === "err") statusEl.classList.add("err");
     }
 
     function pad(num, digits) {
@@ -374,8 +675,7 @@
 
     function getExtension(filename) {
       const i = filename.lastIndexOf(".");
-      if (i === -1) return "png";
-      return filename.slice(i + 1).toLowerCase();
+      return i === -1 ? "png" : filename.slice(i + 1).toLowerCase();
     }
 
     function revokePreview() {
@@ -385,28 +685,88 @@
       }
     }
 
-    function renderEmptyDropZone() {
+    function updateCounters() {
+      const n = Math.max(1, parseInt(splitNInput.value || "1", 10));
+      pieceCount.textContent = String(n * n);
+      const base = currentFile ? getBaseName(currentFile.name) : "sample";
+      namePreview.textContent = base + "_001";
+    }
+
+    function renderDropEmpty() {
       dropContent.innerHTML = `
-        <div class="drop-icon">🖼️</div>
-        <div style="font-size: 1.08rem; font-weight: 700;">ここへ画像をドラッグ</div>
-        <div class="small" style="margin-top: 8px;">またはクリックして画像を選択</div>
+        <div class="drop-icon-wrap">🖼️</div>
+        <div class="drop-title">ここへ画像をドラッグ</div>
+        <div class="drop-sub">またはクリックして画像を選択します。PNG / JPG / WebP など一般的な画像形式に対応しています。</div>
+        <div class="drop-btn-look">画像を選択</div>
       `;
     }
 
-    function renderPreview(file, url) {
+    function renderDropPreview(file, url) {
       dropContent.innerHTML = `
-        <img src="${url}" alt="preview" class="preview">
-        <div class="file-name">${escapeHtml(file.name)}</div>
+        <img src="${url}" alt="preview" class="preview-image">
+        <div class="preview-name">${escapeHtml(file.name)}</div>
       `;
     }
 
-    function escapeHtml(str) {
-      return str
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+    function renderOutputPreview() {
+      const n = Math.max(1, parseInt(splitNInput.value || "1", 10));
+      const board = document.querySelector(".preview-board");
+      const boardStyle = window.getComputedStyle(board);
+      const padX = parseFloat(boardStyle.paddingLeft) + parseFloat(boardStyle.paddingRight);
+      const padY = parseFloat(boardStyle.paddingTop) + parseFloat(boardStyle.paddingBottom);
+      const gap = 8;
+      const usableW = Math.max(120, board.clientWidth - padX);
+      const usableH = Math.max(120, board.clientHeight - padY);
+
+      const tileByW = Math.floor((usableW - gap * (n - 1)) / n);
+      const tileByH = Math.floor((usableH - gap * (n - 1)) / n);
+      const tileSize = Math.max(24, Math.min(tileByW, tileByH));
+
+      previewGrid.style.gridTemplateColumns = `repeat(${n}, ${tileSize}px)`;
+      previewGrid.style.setProperty("--tile-size", `${tileSize}px`);
+      previewGrid.style.width = `${n * tileSize + gap * (n - 1)}px`;
+      previewGrid.style.height = `${n * tileSize + gap * (n - 1)}px`;
+      previewGrid.innerHTML = "";
+
+      if (!currentFile || !currentPreviewUrl) {
+        previewPlaceholder.style.display = "grid";
+        previewCaption.textContent = `現在は ${n}×${n} 分割の待機状態です。画像を読み込むとプレビューが表示されます。`;
+        for (let i = 0; i < n * n; i++) {
+          const tile = document.createElement("div");
+          tile.className = "preview-tile";
+          tile.style.background = "linear-gradient(135deg, rgba(59,130,246,0.28), rgba(6,182,212,0.16))";
+          const label = document.createElement("div");
+          label.className = "preview-label";
+          label.textContent = pad(i + 1, 3);
+          tile.appendChild(label);
+          previewGrid.appendChild(tile);
+        }
+        return;
+      }
+
+      previewPlaceholder.style.display = "none";
+
+      for (let index = 0; index < n * n; index++) {
+        const row = Math.floor(index / n);
+        const col = index % n;
+
+        const posX = n === 1 ? 50 : (col / (n - 1)) * 100;
+        const posY = n === 1 ? 50 : (row / (n - 1)) * 100;
+
+        const tile = document.createElement("div");
+        tile.className = "preview-tile";
+        tile.style.backgroundImage = `url("${currentPreviewUrl}")`;
+        tile.style.backgroundSize = `${n * 100}% ${n * 100}%`;
+        tile.style.backgroundPosition = `${posX}% ${posY}%`;
+
+        const label = document.createElement("div");
+        label.className = "preview-label";
+        label.textContent = pad(index + 1, 3);
+        tile.appendChild(label);
+        previewGrid.appendChild(tile);
+      }
+
+      previewCaption.textContent = `現在の画像を ${n}×${n} に分割したプレビューです（全 ${n * n} 枚）。左上から右下へ、行優先で連番を付けます。`;
     }
 
     function acceptFile(file) {
@@ -420,20 +780,23 @@
       revokePreview();
       currentFile = file;
       currentPreviewUrl = URL.createObjectURL(file);
-      renderPreview(file, currentPreviewUrl);
-
+      renderDropPreview(file, currentPreviewUrl);
       downloadBtn.disabled = false;
       clearBtn.disabled = false;
-      setStatus(`読み込み済み: ${file.name}`, "ok");
+      updateCounters();
+      renderOutputPreview();
+      setStatus("読み込み済み: " + file.name, "ok");
     }
 
     function clearAll() {
       revokePreview();
       currentFile = null;
       fileInput.value = "";
-      renderEmptyDropZone();
+      renderDropEmpty();
       downloadBtn.disabled = true;
       clearBtn.disabled = true;
+      updateCounters();
+      renderOutputPreview();
       setStatus("画像を選ぶか、ここへドラッグしてください。");
     }
 
@@ -485,7 +848,6 @@
         const img = await loadImageFromFile(currentFile);
         const width = img.naturalWidth;
         const height = img.naturalHeight;
-
         const cellWidth = Math.floor(width / n);
         const cellHeight = Math.floor(height / n);
 
@@ -495,10 +857,8 @@
 
         const baseName = getBaseName(currentFile.name);
         const originalExt = getExtension(currentFile.name);
-
         const allowed = ["png", "jpg", "jpeg", "webp"];
         const outExt = allowed.includes(originalExt) ? originalExt : "png";
-
         const mimeMap = {
           png: "image/png",
           jpg: "image/jpeg",
@@ -507,7 +867,6 @@
         };
         const mimeType = mimeMap[outExt] || "image/png";
         const quality = (outExt === "jpg" || outExt === "jpeg") ? 0.92 : undefined;
-
         const total = n * n;
         const digits = Math.max(3, String(total).length);
         const zip = new JSZip();
@@ -525,9 +884,7 @@
             canvas.height = sh;
 
             const ctx = canvas.getContext("2d");
-            if (!ctx) {
-              throw new Error("Canvas初期化に失敗しました。");
-            }
+            if (!ctx) throw new Error("Canvas初期化に失敗しました。");
 
             ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
 
@@ -547,8 +904,8 @@
         document.body.appendChild(a);
         a.click();
         a.remove();
-
         URL.revokeObjectURL(zipUrl);
+
         setStatus(`${total} 枚の分割画像を ZIP でダウンロードしました。`, "ok");
       } catch (err) {
         setStatus(err && err.message ? err.message : "処理中にエラーが発生しました。", "err");
@@ -559,6 +916,12 @@
     }
 
     dropZone.addEventListener("click", () => fileInput.click());
+    dropZone.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        fileInput.click();
+      }
+    });
 
     fileInput.addEventListener("change", (e) => {
       const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
@@ -577,17 +940,31 @@
     dropZone.addEventListener("drop", (e) => {
       e.preventDefault();
       dropZone.classList.remove("dragging");
-      const file = e.dataTransfer.files && e.dataTransfer.files[0]
-        ? e.dataTransfer.files[0]
-        : null;
+      const file = e.dataTransfer.files && e.dataTransfer.files[0] ? e.dataTransfer.files[0] : null;
       acceptFile(file);
     });
 
-    splitNInput.addEventListener("input", updatePieceCount);
+    splitNInput.addEventListener("input", () => {
+      updateCounters();
+      renderOutputPreview();
+    });
+
+    splitNInput.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      const current = Math.max(1, parseInt(splitNInput.value || "1", 10));
+      const delta = e.deltaY < 0 ? 1 : -1;
+      splitNInput.value = String(Math.max(1, current + delta));
+      updateCounters();
+      renderOutputPreview();
+    }, { passive: false });
+
     downloadBtn.addEventListener("click", generateZip);
     clearBtn.addEventListener("click", clearAll);
+    window.addEventListener("resize", renderOutputPreview);
 
-    updatePieceCount();
+    renderDropEmpty();
+    updateCounters();
+    renderOutputPreview();
   </script>
 </body>
 </html>
