@@ -615,7 +615,7 @@
               <button id="clearBtn" class="secondary-btn full">クリア</button>
             </div>
 
-            <div id="status" class="status-box">画像を選ぶか、ここへドラッグしてください。</div>
+            <div id="status" class="status-box">画像を読み込んだあと、分割数 n を決めて ZIP または PDF をダウンロードしてください。</div>
           </section>
         </div>
 
@@ -830,7 +830,7 @@
       clearBtn.disabled = true;
       updateCounters();
       renderOutputPreview();
-      setStatus("画像を選ぶか、ここへドラッグしてください。");
+      setStatus("画像を読み込んだあと、分割数 n を決めて ZIP または PDF をダウンロードしてください。");
     }
 
     function loadImageFromFile(file) {
