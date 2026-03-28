@@ -4,19 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GridSplit Downloader</title>
-  <meta name="description" content="画像を n×n に分割し、左上から右下へ連番を付けて ZIP で一括ダウンロードできる無料ツールです。" />
+  <meta name="description" content="画像を n×n に分割し、左上から右下へ連番を付けて ZIP または PDF で一括ダウンロードできる無料ツールです。" />
   <meta name="theme-color" content="#0f172a" />
 
   <meta property="og:type" content="website" />
   <meta property="og:title" content="GridSplit Downloader" />
-  <meta property="og:description" content="画像を n×n に分割して、ZIPでまとめてダウンロード。" />
+  <meta property="og:description" content="画像を n×n に分割して、ZIP または PDF でまとめてダウンロード。" />
   <meta property="og:url" content="https://tarosay.github.io/image-grid-splitter/" />
   <meta property="og:image" content="https://tarosay.github.io/image-grid-splitter/og-image.png" />
   <meta property="og:site_name" content="GridSplit Downloader" />
 
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="GridSplit Downloader" />
-  <meta name="twitter:description" content="画像を n×n に分割して、ZIPでまとめてダウンロード。" />
+  <meta name="twitter:description" content="画像を n×n に分割して、ZIP または PDF でまとめてダウンロード。" />
   <meta name="twitter:image" content="https://tarosay.github.io/image-grid-splitter/og-image.png" />
 
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
@@ -357,7 +357,8 @@
       font-weight: 700;
     }
 
-    .field-input {
+    .field-input,
+    .field-select {
       width: 100%;
       height: 50px;
       border-radius: 18px;
@@ -369,9 +370,17 @@
       background: white;
     }
 
-    .field-input:focus {
+    .field-input:focus,
+    .field-select:focus {
       border-color: #60a5fa;
       box-shadow: 0 0 0 4px rgba(96,165,250,0.14);
+    }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      align-items: end;
     }
 
     .metric-row {
@@ -405,6 +414,11 @@
       display: grid;
       gap: 12px;
       margin-top: 18px;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .button-col .full {
+      grid-column: 1 / -1;
     }
 
     button {
@@ -513,7 +527,9 @@
         min-height: 280px;
       }
 
-      .metric-row {
+      .settings-grid,
+      .metric-row,
+      .button-col {
         grid-template-columns: 1fr;
       }
 
@@ -537,7 +553,7 @@
         <div class="brand-badge">▦</div>
         <div>
           <div class="brand-title">GridSplit Downloader</div>
-          <div class="brand-sub">n×n image splitter for instant ZIP download</div>
+          <div class="brand-sub">n×n image splitter for ZIP / PDF download</div>
         </div>
       </a>
       <div class="top-note">Browser only ・ No upload to server ・ Free</div>
@@ -568,8 +584,19 @@
             <h2 class="card-title">3. 分割数を決めてダウンロード</h2>
             <p class="card-desc">分割数 n を指定すると、画像を n×n に分割します。入力欄の上でマウスホイールでも増減できます。</p>
 
-            <label class="field-label" for="splitN">分割数 n</label>
-            <input id="splitN" class="field-input" type="number" min="1" step="1" value="2" inputmode="numeric" />
+            <div class="settings-grid">
+              <div>
+                <label class="field-label" for="splitN">分割数 n</label>
+                <input id="splitN" class="field-input" type="number" min="1" step="1" value="2" inputmode="numeric" />
+              </div>
+              <div>
+                <label class="field-label" for="pdfPageSize">PDF用紙サイズ</label>
+                <select id="pdfPageSize" class="field-select">
+                  <option value="a4">A4</option>
+                  <option value="a3">A3</option>
+                </select>
+              </div>
+            </div>
 
             <div class="metric-row">
               <div class="metric-box">
@@ -583,8 +610,9 @@
             </div>
 
             <div class="button-col">
-              <button id="downloadBtn" class="primary-btn" disabled>ZIPでダウンロード</button>
-              <button id="clearBtn" class="secondary-btn" disabled>クリア</button>
+              <button id="downloadZipBtn" class="primary-btn">ZIPでダウンロード</button>
+              <button id="downloadPdfBtn" class="primary-btn">PDFでダウンロード</button>
+              <button id="clearBtn" class="secondary-btn full">クリア</button>
             </div>
 
             <div id="status" class="status-box">画像を選ぶか、ここへドラッグしてください。</div>
@@ -617,6 +645,7 @@
             <li>連番は <strong>左上 → 右下</strong>、行優先で振られます。</li>
             <li>元のファイル名を使って <code>sample_001.png</code> の形式で保存します。</li>
             <li>最後の行・列は、端数がある場合も画像の右端・下端まで含めて切り出します。</li>
+            <li>PDF は <strong>1ページに1枚</strong> で出力されます。貼り合わせ印刷向けです。</li>
           </ul>
         </section>
       </div>
@@ -631,14 +660,17 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script>
     const dropZone = document.getElementById("dropZone");
     const dropContent = document.getElementById("dropContent");
     const fileInput = document.getElementById("fileInput");
     const splitNInput = document.getElementById("splitN");
+    const pdfPageSizeSelect = document.getElementById("pdfPageSize");
     const pieceCount = document.getElementById("pieceCount");
     const namePreview = document.getElementById("namePreview");
-    const downloadBtn = document.getElementById("downloadBtn");
+    const downloadZipBtn = document.getElementById("downloadZipBtn");
+    const downloadPdfBtn = document.getElementById("downloadPdfBtn");
     const clearBtn = document.getElementById("clearBtn");
     const statusEl = document.getElementById("status");
     const previewGrid = document.getElementById("previewGrid");
@@ -717,7 +749,6 @@
       const gap = 8;
       const usableW = Math.max(120, board.clientWidth - padX);
       const usableH = Math.max(120, board.clientHeight - padY);
-
       const tileByW = Math.floor((usableW - gap * (n - 1)) / n);
       const tileByH = Math.floor((usableH - gap * (n - 1)) / n);
       const tileSize = Math.max(24, Math.min(tileByW, tileByH));
@@ -781,7 +812,8 @@
       currentFile = file;
       currentPreviewUrl = URL.createObjectURL(file);
       renderDropPreview(file, currentPreviewUrl);
-      downloadBtn.disabled = false;
+      downloadZipBtn.disabled = false;
+      downloadPdfBtn.disabled = false;
       clearBtn.disabled = false;
       updateCounters();
       renderOutputPreview();
@@ -793,7 +825,8 @@
       currentFile = null;
       fileInput.value = "";
       renderDropEmpty();
-      downloadBtn.disabled = true;
+      downloadZipBtn.disabled = true;
+      downloadPdfBtn.disabled = true;
       clearBtn.disabled = true;
       updateCounters();
       renderOutputPreview();
@@ -828,6 +861,50 @@
       });
     }
 
+    function canvasToDataUrl(canvas, mimeType, quality) {
+      return canvas.toDataURL(mimeType, quality);
+    }
+
+    function getOutputFormat(originalExt) {
+      const allowed = ["png", "jpg", "jpeg", "webp"];
+      const outExt = allowed.includes(originalExt) ? originalExt : "png";
+      const mimeMap = {
+        png: "image/png",
+        jpg: "image/jpeg",
+        jpeg: "image/jpeg",
+        webp: "image/webp"
+      };
+      const mimeType = mimeMap[outExt] || "image/png";
+      const quality = (outExt === "jpg" || outExt === "jpeg") ? 0.92 : undefined;
+      return { outExt, mimeType, quality };
+    }
+
+    function createPieceCanvas(img, n, row, col) {
+      const width = img.naturalWidth;
+      const height = img.naturalHeight;
+      const cellWidth = Math.floor(width / n);
+      const cellHeight = Math.floor(height / n);
+
+      if (cellWidth < 1 || cellHeight < 1) {
+        throw new Error(`画像サイズ ${width}x${height} に対して n=${n} は大きすぎます。`);
+      }
+
+      const sx = col * cellWidth;
+      const sy = row * cellHeight;
+      const sw = (col === n - 1) ? (width - sx) : cellWidth;
+      const sh = (row === n - 1) ? (height - sy) : cellHeight;
+
+      const canvas = document.createElement("canvas");
+      canvas.width = sw;
+      canvas.height = sh;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        throw new Error("Canvas初期化に失敗しました。");
+      }
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+      return canvas;
+    }
+
     async function generateZip() {
       if (!currentFile) {
         setStatus("先に画像ファイルを選択してください。", "err");
@@ -840,33 +917,15 @@
         return;
       }
 
-      downloadBtn.disabled = true;
+      downloadZipBtn.disabled = true;
+      downloadPdfBtn.disabled = true;
       clearBtn.disabled = true;
-      setStatus("分割画像を生成しています...");
+      setStatus("ZIP用の分割画像を生成しています...");
 
       try {
         const img = await loadImageFromFile(currentFile);
-        const width = img.naturalWidth;
-        const height = img.naturalHeight;
-        const cellWidth = Math.floor(width / n);
-        const cellHeight = Math.floor(height / n);
-
-        if (cellWidth < 1 || cellHeight < 1) {
-          throw new Error(`画像サイズ ${width}x${height} に対して n=${n} は大きすぎます。`);
-        }
-
+        const { outExt, mimeType, quality } = getOutputFormat(getExtension(currentFile.name));
         const baseName = getBaseName(currentFile.name);
-        const originalExt = getExtension(currentFile.name);
-        const allowed = ["png", "jpg", "jpeg", "webp"];
-        const outExt = allowed.includes(originalExt) ? originalExt : "png";
-        const mimeMap = {
-          png: "image/png",
-          jpg: "image/jpeg",
-          jpeg: "image/jpeg",
-          webp: "image/webp"
-        };
-        const mimeType = mimeMap[outExt] || "image/png";
-        const quality = (outExt === "jpg" || outExt === "jpeg") ? 0.92 : undefined;
         const total = n * n;
         const digits = Math.max(3, String(total).length);
         const zip = new JSZip();
@@ -874,20 +933,7 @@
         let index = 1;
         for (let row = 0; row < n; row++) {
           for (let col = 0; col < n; col++) {
-            const sx = col * cellWidth;
-            const sy = row * cellHeight;
-            const sw = (col === n - 1) ? (width - sx) : cellWidth;
-            const sh = (row === n - 1) ? (height - sy) : cellHeight;
-
-            const canvas = document.createElement("canvas");
-            canvas.width = sw;
-            canvas.height = sh;
-
-            const ctx = canvas.getContext("2d");
-            if (!ctx) throw new Error("Canvas初期化に失敗しました。");
-
-            ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
-
+            const canvas = createPieceCanvas(img, n, row, col);
             const blob = await canvasToBlob(canvas, mimeType, quality);
             const filename = `${baseName}_${pad(index, digits)}.${outExt}`;
             zip.file(filename, blob);
@@ -897,7 +943,6 @@
 
         const zipBlob = await zip.generateAsync({ type: "blob" });
         const zipUrl = URL.createObjectURL(zipBlob);
-
         const a = document.createElement("a");
         a.href = zipUrl;
         a.download = `${baseName}_split_${n}x${n}.zip`;
@@ -908,9 +953,81 @@
 
         setStatus(`${total} 枚の分割画像を ZIP でダウンロードしました。`, "ok");
       } catch (err) {
-        setStatus(err && err.message ? err.message : "処理中にエラーが発生しました。", "err");
+        setStatus(err && err.message ? err.message : "ZIP生成中にエラーが発生しました。", "err");
       } finally {
-        downloadBtn.disabled = !currentFile;
+        downloadZipBtn.disabled = !currentFile;
+        downloadPdfBtn.disabled = !currentFile;
+        clearBtn.disabled = !currentFile;
+      }
+    }
+
+    async function generatePdf() {
+      if (!currentFile) {
+        setStatus("先に画像ファイルを選択してください。", "err");
+        return;
+      }
+
+      const n = parseInt(splitNInput.value || "0", 10);
+      if (!Number.isInteger(n) || n < 1) {
+        setStatus("n は 1 以上の整数で指定してください。", "err");
+        return;
+      }
+
+      downloadZipBtn.disabled = true;
+      downloadPdfBtn.disabled = true;
+      clearBtn.disabled = true;
+      setStatus("PDFを生成しています...");
+
+      try {
+        const img = await loadImageFromFile(currentFile);
+        const { mimeType, quality } = getOutputFormat(getExtension(currentFile.name));
+        const baseName = getBaseName(currentFile.name);
+        const total = n * n;
+        const pageSize = pdfPageSizeSelect.value || "a4";
+        const { jsPDF } = window.jspdf;
+
+        const pdf = new jsPDF({
+          orientation: "portrait",
+          unit: "mm",
+          format: pageSize
+        });
+
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const margin = 0;
+
+        let index = 1;
+        for (let row = 0; row < n; row++) {
+          for (let col = 0; col < n; col++) {
+            if (index > 1) {
+              pdf.addPage(pageSize, "portrait");
+            }
+
+            const canvas = createPieceCanvas(img, n, row, col);
+            const dataUrl = canvasToDataUrl(canvas, mimeType, quality);
+
+            const imgW = canvas.width;
+            const imgH = canvas.height;
+            const scale = Math.min((pageWidth - margin * 2) / imgW, (pageHeight - margin * 2) / imgH);
+            const drawW = imgW * scale;
+            const drawH = imgH * scale;
+            const x = (pageWidth - drawW) / 2;
+            const y = (pageHeight - drawH) / 2;
+
+            const pdfType = mimeType === "image/png" ? "PNG" : "JPEG";
+            pdf.addImage(dataUrl, pdfType, x, y, drawW, drawH, undefined, "FAST");
+
+            index++;
+          }
+        }
+
+        pdf.save(`${baseName}_split_${n}x${n}_${pageSize}.pdf`);
+        setStatus(`${total} ページの PDF をダウンロードしました。1ページ1画像です。`, "ok");
+      } catch (err) {
+        setStatus(err && err.message ? err.message : "PDF生成中にエラーが発生しました。", "err");
+      } finally {
+        downloadZipBtn.disabled = !currentFile;
+        downloadPdfBtn.disabled = !currentFile;
         clearBtn.disabled = !currentFile;
       }
     }
@@ -958,13 +1075,17 @@
       renderOutputPreview();
     }, { passive: false });
 
-    downloadBtn.addEventListener("click", generateZip);
+    downloadZipBtn.addEventListener("click", generateZip);
+    downloadPdfBtn.addEventListener("click", generatePdf);
     clearBtn.addEventListener("click", clearAll);
     window.addEventListener("resize", renderOutputPreview);
 
     renderDropEmpty();
     updateCounters();
     renderOutputPreview();
+    downloadZipBtn.disabled = true;
+    downloadPdfBtn.disabled = true;
+    clearBtn.disabled = true;
   </script>
 </body>
 </html>
