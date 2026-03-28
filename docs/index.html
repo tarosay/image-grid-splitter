@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GridSplit Downloader</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #d1d5db;
+      --accent: #111827;
+      --accent2: #374151;
+      --hover: #eef2f7;
+      --ok: #065f46;
+      --err: #991b1b;
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      --radius: 20px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      background: rgba(255, 255, 255, 0.92);
+      border-bottom: 1px solid #e5e7eb;
+      backdrop-filter: blur(8px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .title-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      background: var(--accent);
+      color: white;
+      display: grid;
+      place-items: center;
+      font-size: 24px;
+      box-shadow: var(--shadow);
+      user-select: none;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.7rem;
+    }
+
+    .subtitle {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    main {
+      padding: 24px 20px 40px;
+    }
+
+    .grid {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1.3fr 0.9fr;
+      gap: 24px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    .card h2 {
+      margin: 0 0 6px;
+      font-size: 1.2rem;
+    }
+
+    .card p.desc {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .drop-zone {
+      min-height: 360px;
+      border: 2px dashed var(--line);
+      border-radius: 24px;
+      background: #fafbfc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      cursor: pointer;
+      transition: 0.2s ease;
+      overflow: hidden;
+    }
+
+    .drop-zone:hover {
+      background: var(--hover);
+      border-color: #9ca3af;
+    }
+
+    .drop-zone.dragging {
+      background: #eef2f7;
+      border-color: var(--accent);
+    }
+
+    .drop-inner {
+      width: 100%;
+    }
+
+    .drop-icon {
+      font-size: 56px;
+      line-height: 1;
+      margin-bottom: 12px;
+      user-select: none;
+    }
+
+    .preview {
+      max-width: 100%;
+      max-height: 320px;
+      border-radius: 18px;
+      border: 1px solid #e5e7eb;
+      background: white;
+      object-fit: contain;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    }
+
+    .file-name {
+      margin-top: 12px;
+      color: var(--muted);
+      word-break: break-all;
+      font-size: 0.95rem;
+    }
+
+    .side {
+      display: grid;
+      gap: 24px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      height: 46px;
+      padding: 0 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 16px;
+      font-size: 1rem;
+      background: white;
+      color: var(--text);
+    }
+
+    .info-box {
+      margin-top: 16px;
+      background: #f3f4f6;
+      border-radius: 16px;
+      padding: 14px 16px;
+      color: #374151;
+      font-size: 0.95rem;
+    }
+
+    .btns {
+      margin-top: 18px;
+      display: grid;
+      gap: 12px;
+    }
+
+    button {
+      height: 46px;
+      border: 0;
+      border-radius: 16px;
+      padding: 0 18px;
+      font-size: 0.98rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.15s ease;
+    }
+
+    button.primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    button.primary:hover:not(:disabled) {
+      background: var(--accent2);
+    }
+
+    button.secondary {
+      background: white;
+      color: var(--text);
+      border: 1px solid #d1d5db;
+    }
+
+    button.secondary:hover:not(:disabled) {
+      background: #f9fafb;
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    ul.rules {
+      margin: 0;
+      padding-left: 1.2rem;
+      color: #374151;
+      line-height: 1.8;
+    }
+
+    .status {
+      font-size: 0.96rem;
+      line-height: 1.6;
+      color: #374151;
+      word-break: break-word;
+    }
+
+    .status.ok {
+      color: var(--ok);
+    }
+
+    .status.err {
+      color: var(--err);
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .drop-zone {
+        min-height: 280px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="title-row">
+        <div class="logo">▦</div>
+        <div>
+          <h1>GridSplit Downloader</h1>
+          <p class="subtitle">
+            画像を n×n に分割して、左上から右下へ連番で ZIP ダウンロード
+          </p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="grid">
+      <section class="card">
+        <h2>画像を読み込む</h2>
+        <p class="desc">ファイル選択またはドラッグ&ドロップに対応しています。</p>
+
+        <div id="dropZone" class="drop-zone">
+          <div class="drop-inner" id="dropContent">
+            <div class="drop-icon">🖼️</div>
+            <div style="font-size: 1.08rem; font-weight: 700;">ここへ画像をドラッグ</div>
+            <div class="small" style="margin-top: 8px;">またはクリックして画像を選択</div>
+          </div>
+        </div>
+
+        <input id="fileInput" type="file" accept="image/*" hidden />
+      </section>
+
+      <div class="side">
+        <section class="card">
+          <h2>設定</h2>
+          <p class="desc">n を指定すると n×n 分割します。</p>
+
+          <label for="splitN">分割数 n</label>
+          <input id="splitN" type="number" min="1" step="1" value="2" />
+
+          <div class="info-box">
+            出力枚数: <strong id="pieceCount">4</strong>
+          </div>
+
+          <div class="btns">
+            <button id="downloadBtn" class="primary" disabled>ZIPでダウンロード</button>
+            <button id="clearBtn" class="secondary" disabled>クリア</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>出力ルール</h2>
+          <ul class="rules">
+            <li>元ファイル名を使って <code>sample_001.png</code> の形式で保存します。</li>
+            <li>連番は左上から右下へ、行優先で振ります。</li>
+            <li>分割結果は 1つの ZIP にまとめてダウンロードします。</li>
+          </ul>
+        </section>
+
+        <section class="card">
+          <h2>状態</h2>
+          <div id="status" class="status">画像を選ぶか、ここへドラッグしてください。</div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script>
+    const dropZone = document.getElementById("dropZone");
+    const dropContent = document.getElementById("dropContent");
+    const fileInput = document.getElementById("fileInput");
+    const splitNInput = document.getElementById("splitN");
+    const pieceCount = document.getElementById("pieceCount");
+    const statusEl = document.getElementById("status");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const clearBtn = document.getElementById("clearBtn");
+
+    let currentFile = null;
+    let currentPreviewUrl = null;
+
+    function setStatus(message, type = "") {
+      statusEl.textContent = message;
+      statusEl.className = "status";
+      if (type === "ok") statusEl.classList.add("ok");
+      if (type === "err") statusEl.classList.add("err");
+    }
+
+    function updatePieceCount() {
+      const n = Math.max(1, parseInt(splitNInput.value || "1", 10));
+      pieceCount.textContent = String(n * n);
+    }
+
+    function pad(num, digits) {
+      return String(num).padStart(digits, "0");
+    }
+
+    function getBaseName(filename) {
+      const i = filename.lastIndexOf(".");
+      return i === -1 ? filename : filename.slice(0, i);
+    }
+
+    function getExtension(filename) {
+      const i = filename.lastIndexOf(".");
+      if (i === -1) return "png";
+      return filename.slice(i + 1).toLowerCase();
+    }
+
+    function revokePreview() {
+      if (currentPreviewUrl) {
+        URL.revokeObjectURL(currentPreviewUrl);
+        currentPreviewUrl = null;
+      }
+    }
+
+    function renderEmptyDropZone() {
+      dropContent.innerHTML = `
+        <div class="drop-icon">🖼️</div>
+        <div style="font-size: 1.08rem; font-weight: 700;">ここへ画像をドラッグ</div>
+        <div class="small" style="margin-top: 8px;">またはクリックして画像を選択</div>
+      `;
+    }
+
+    function renderPreview(file, url) {
+      dropContent.innerHTML = `
+        <img src="${url}" alt="preview" class="preview">
+        <div class="file-name">${escapeHtml(file.name)}</div>
+      `;
+    }
+
+    function escapeHtml(str) {
+      return str
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function acceptFile(file) {
+      if (!file) return;
+
+      if (!file.type.startsWith("image/")) {
+        setStatus("画像ファイルのみ対応しています。", "err");
+        return;
+      }
+
+      revokePreview();
+      currentFile = file;
+      currentPreviewUrl = URL.createObjectURL(file);
+      renderPreview(file, currentPreviewUrl);
+
+      downloadBtn.disabled = false;
+      clearBtn.disabled = false;
+      setStatus(`読み込み済み: ${file.name}`, "ok");
+    }
+
+    function clearAll() {
+      revokePreview();
+      currentFile = null;
+      fileInput.value = "";
+      renderEmptyDropZone();
+      downloadBtn.disabled = true;
+      clearBtn.disabled = true;
+      setStatus("画像を選ぶか、ここへドラッグしてください。");
+    }
+
+    function loadImageFromFile(file) {
+      return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          resolve(img);
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          reject(new Error("画像の読み込みに失敗しました。"));
+        };
+        img.src = url;
+      });
+    }
+
+    function canvasToBlob(canvas, mimeType, quality) {
+      return new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error("Blob生成に失敗しました。"));
+            return;
+          }
+          resolve(blob);
+        }, mimeType, quality);
+      });
+    }
+
+    async function generateZip() {
+      if (!currentFile) {
+        setStatus("先に画像ファイルを選択してください。", "err");
+        return;
+      }
+
+      const n = parseInt(splitNInput.value || "0", 10);
+      if (!Number.isInteger(n) || n < 1) {
+        setStatus("n は 1 以上の整数で指定してください。", "err");
+        return;
+      }
+
+      downloadBtn.disabled = true;
+      clearBtn.disabled = true;
+      setStatus("分割画像を生成しています...");
+
+      try {
+        const img = await loadImageFromFile(currentFile);
+        const width = img.naturalWidth;
+        const height = img.naturalHeight;
+
+        const cellWidth = Math.floor(width / n);
+        const cellHeight = Math.floor(height / n);
+
+        if (cellWidth < 1 || cellHeight < 1) {
+          throw new Error(`画像サイズ ${width}x${height} に対して n=${n} は大きすぎます。`);
+        }
+
+        const baseName = getBaseName(currentFile.name);
+        const originalExt = getExtension(currentFile.name);
+
+        const allowed = ["png", "jpg", "jpeg", "webp"];
+        const outExt = allowed.includes(originalExt) ? originalExt : "png";
+
+        const mimeMap = {
+          png: "image/png",
+          jpg: "image/jpeg",
+          jpeg: "image/jpeg",
+          webp: "image/webp"
+        };
+        const mimeType = mimeMap[outExt] || "image/png";
+        const quality = (outExt === "jpg" || outExt === "jpeg") ? 0.92 : undefined;
+
+        const total = n * n;
+        const digits = Math.max(3, String(total).length);
+        const zip = new JSZip();
+
+        let index = 1;
+        for (let row = 0; row < n; row++) {
+          for (let col = 0; col < n; col++) {
+            const sx = col * cellWidth;
+            const sy = row * cellHeight;
+            const sw = (col === n - 1) ? (width - sx) : cellWidth;
+            const sh = (row === n - 1) ? (height - sy) : cellHeight;
+
+            const canvas = document.createElement("canvas");
+            canvas.width = sw;
+            canvas.height = sh;
+
+            const ctx = canvas.getContext("2d");
+            if (!ctx) {
+              throw new Error("Canvas初期化に失敗しました。");
+            }
+
+            ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+
+            const blob = await canvasToBlob(canvas, mimeType, quality);
+            const filename = `${baseName}_${pad(index, digits)}.${outExt}`;
+            zip.file(filename, blob);
+            index++;
+          }
+        }
+
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+        const zipUrl = URL.createObjectURL(zipBlob);
+
+        const a = document.createElement("a");
+        a.href = zipUrl;
+        a.download = `${baseName}_split_${n}x${n}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        URL.revokeObjectURL(zipUrl);
+        setStatus(`${total} 枚の分割画像を ZIP でダウンロードしました。`, "ok");
+      } catch (err) {
+        setStatus(err && err.message ? err.message : "処理中にエラーが発生しました。", "err");
+      } finally {
+        downloadBtn.disabled = !currentFile;
+        clearBtn.disabled = !currentFile;
+      }
+    }
+
+    dropZone.addEventListener("click", () => fileInput.click());
+
+    fileInput.addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+      acceptFile(file);
+    });
+
+    dropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropZone.classList.add("dragging");
+    });
+
+    dropZone.addEventListener("dragleave", () => {
+      dropZone.classList.remove("dragging");
+    });
+
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("dragging");
+      const file = e.dataTransfer.files && e.dataTransfer.files[0]
+        ? e.dataTransfer.files[0]
+        : null;
+      acceptFile(file);
+    });
+
+    splitNInput.addEventListener("input", updatePieceCount);
+    downloadBtn.addEventListener("click", generateZip);
+    clearBtn.addEventListener("click", clearAll);
+
+    updatePieceCount();
+  </script>
+</body>
+</html>
